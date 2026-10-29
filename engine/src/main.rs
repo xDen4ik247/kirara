@@ -1,4 +1,4 @@
-//! jp-quiz-engine — the JSON-lines bridge between the QML window and the engine (stdin -> stdout),
+//! kirara-engine — the JSON-lines bridge between the QML window and the engine (stdin -> stdout),
 //! a Rust port of jpquiz/server.py with the same requests and replies:
 //!   {"cmd": "hello"} | {"cmd": "next"} | {"cmd": "answer", "qid": 3, "choice": 1, "ms": 2300}
 //!   {"cmd": "answer", "qid": 3, "order": ["本を", "読んで", "いる"]} | {"cmd": "skip", "qid": 3}
@@ -8,11 +8,12 @@
 //!   {"cmd": "replay", "item": "vc:1:2", "correct": true, "ms": 5000} (maintenance: rebuild progress after accidental input)
 //!   {"cmd": "calib_start"} | {"cmd": "calib_answer", "choice": 2 or null} | {"cmd": "calib_cancel"} (placement test)
 //! Every reply is one JSON object per line, echoing the request's "rid".
-//! Test hooks: JPQUIZ_SEED=<int> seeds the random choices like random.Random(seed);
-//! JPQUIZ_TEST_CLOCK=1 lets a request carry "_now" (unix seconds) to set the engine's clock
-//! (JPQUIZ_TEST_NOW = its value before the first request).
+//! Test hooks: KIRARA_SEED=<int> seeds the random choices like random.Random(seed);
+//! KIRARA_TEST_CLOCK=1 lets a request carry "_now" (unix seconds) to set the engine's clock
+//! (KIRARA_TEST_NOW = its value before the first request).
 mod anki;
 mod clock;
+mod env;
 mod engine;
 mod memory;
 mod model;
@@ -28,9 +29,9 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 fn data_dir() -> PathBuf {
-    let d = match std::env::var_os("JPQUIZ_DATA") {
+    let d = match env::var_os("DATA") {
         Some(p) => PathBuf::from(p),
-        None => PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share/jp-quiz"),
+        None => PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share/kirara"),
     };
     let _ = std::fs::create_dir_all(&d);
     d
@@ -42,18 +43,18 @@ fn now() -> f64 {
 
 fn main() {
     let d = data_dir();
-    let content = std::env::var("JPQUIZ_CONTENT").unwrap_or_else(|_| d.join("content.db").to_string_lossy().into_owned());
-    let progress = std::env::var("JPQUIZ_PROGRESS").unwrap_or_else(|_| d.join("progress.db").to_string_lossy().into_owned());
-    let seed: Option<u128> = std::env::var("JPQUIZ_SEED").ok().and_then(|s| s.parse().ok());
-    let test_clock = std::env::var("JPQUIZ_TEST_CLOCK").is_ok_and(|v| v == "1");
-    let start = std::env::var("JPQUIZ_TEST_NOW").ok().and_then(|v| v.parse::<f64>().ok()).filter(|_| test_clock);
+    let content = env::var("CONTENT").unwrap_or_else(|_| d.join("content.db").to_string_lossy().into_owned());
+    let progress = env::var("PROGRESS").unwrap_or_else(|_| d.join("progress.db").to_string_lossy().into_owned());
+    let seed: Option<u128> = env::var("SEED").ok().and_then(|s| s.parse().ok());
+    let test_clock = env::var("TEST_CLOCK").is_ok_and(|v| v == "1");
+    let start = env::var("TEST_NOW").ok().and_then(|v| v.parse::<f64>().ok()).filter(|_| test_clock);
     let clock = Rc::new(Cell::new(start.unwrap_or(f64::NAN)));
     let c2 = clock.clone();
     let now_fn: Box<dyn Fn() -> f64> = if test_clock { Box::new(move || if c2.get().is_nan() { now() } else { c2.get() }) } else { Box::new(now) };
     let mut eng = match engine::Engine::new(&content, &progress, now_fn, seed) {
         Ok(e) => e,
         Err(e) => {
-            eprintln!("jp-quiz-engine: {e}");
+            eprintln!("kirara-engine: {e}");
             std::process::exit(1);
         }
     };

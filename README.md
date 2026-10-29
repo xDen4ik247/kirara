@@ -1,6 +1,11 @@
-# JP Quiz — endless adaptive Japanese quiz (N5 → N3, plus everyday words)
+# Kirara 雲母 — endless adaptive Japanese quiz (N5 → N3, plus everyday words)
 
-A liquid-glass quickshell window (`qml/`) driven by a Rust engine (`engine/`, `jp-quiz-engine`).
+*Kirara* (雲母, mica) splits into thin sheets, like flash cards. Formerly **JP Quiz** (`jp-quiz`); part of the
+[Serpantinum Glass](https://github.com/xDen4ik247/serpantinum/tree/glass) app family, whose installer offers it as an option.
+Installing it once moves JP Quiz's data to `~/.local/share/kirara` (`migrate.sh`; the old path stays as a link,
+and `jp-quiz` keeps working as a shim). Your Anki deck and tags keep their names.
+
+A liquid-glass quickshell window (`qml/`) driven by a Rust engine (`engine/`, `kirara-engine`).
 It quizzes **particles, conjugation and grammar, sentence meaning, 並べ替え word order,
 kanji reading/writing in context and vocabulary in context**, built from ~50 000 items made from
 real Tatoeba sentences, and picks every next question so that you succeed about 75 % of the time.
@@ -11,7 +16,7 @@ After each answer the sentence's words are glossed from JMdict **in the sense th
 sentence** (the sense whose glosses match the sentence's own translation; set phrases like その通り
 are glossed as one unit). Conjugation questions only offer real forms of the verb.
 
-Open it with **Mod+J** or `jp-quiz` (focuses the open window if there is one, via the shared
+Open it with **Mod+J** or `kirara` (focuses the open window if there is one, via the shared
 `niri-focus-or-run` helper in `~/.local/bin`). Keys: `1–4` answer · `Space` skip · `Enter` next ·
 `A` add to Anki (right or wrong; during the next question it adds the one you just passed) · `W` hold
 the result · `F` furigana · `L` EN/RU · `R` rank tab (`←→` words / kanji / grammar, `T` placement test) ·
@@ -99,7 +104,7 @@ The Rank tab measures you against **full lists**, not against what the quiz happ
 
 | Path | What |
 |---|---|
-| `engine/src/` | the engine (`jp-quiz-engine`): `model.rs` ratings, `memory.rs` FSRS, `engine.rs` selection/game/persistence, `rank.rs` the Rank tab, `anki.rs` AnkiConnect (reads; `answerCards` for reviews) + `anki-add`, `review.rs` Anki review questions, `main.rs` JSON-lines bridge (tests: `engine/tests/anki_reviews.rs`, a fake AnkiConnect) |
+| `engine/src/` | the engine (`kirara-engine`): `model.rs` ratings, `memory.rs` FSRS, `engine.rs` selection/game/persistence, `rank.rs` the Rank tab, `anki.rs` AnkiConnect (reads; `answerCards` for reviews) + `anki-add`, `review.rs` Anki review questions, `main.rs` JSON-lines bridge (tests: `engine/tests/anki_reviews.rs`, a fake AnkiConnect) |
 | `engine/src/bin/jlpt-syllabus.rs` | builds `assets/jlpt/{vocab,kanji,everyday}.tsv` from `data/raw/` (compiled into the engine) |
 | `engine/src/bin/everyday-pack.rs` | adds the everyday-word questions to `data/content.db` (run by `install.sh`) |
 | `assets/jlpt/` | the lists: JLPT words, kanji + 常用, grammar (hand-written), everyday words, hand-picked extras |
@@ -107,8 +112,10 @@ The Rank tab measures you against **full lists**, not against what the quiz happ
 | `build/`, `jpquiz/`, `tests/` | the original Python content build and engine: frozen legacy (the project is Rust-only now), kept until the content build is ported |
 
 Install/update the runnable copy with `./install.sh` (needs `cargo`; progress in
-`~/.local/share/jp-quiz/progress.db` is kept). It needs `data/content.db` (the content build output) and runs
-the everyday pack when `data/raw/` is there (`build/fetch.sh` downloads it; wordfreq goes in `data/raw/wordfreq/`).
+`~/.local/share/kirara/progress.db` is kept; `./uninstall.sh` removes the program and keeps your data). The question
+bank is `data/content.db` when this checkout has one, else the installed one, else `tools/build-content.sh` builds it
+(downloads ~80 MB into `data/raw/`, then the legacy content build in a uv venv). The everyday pack runs when `data/raw/`
+is there (`build/fetch.sh` downloads it; wordfreq goes in `data/raw/wordfreq/`).
 Rebuild the lists: `cargo run --release --bin jlpt-syllabus -- data/raw assets/jlpt`.
 
 ## Data and licenses
@@ -120,4 +127,4 @@ Rebuild the lists: `cargo run --release --bin jlpt-syllabus -- data/raw assets/j
   stephenmk/yomitan-jlpt-vocab (CC BY-SA 4.0); JLPT kanji levels via davidluzgouveia/kanji-data.
 * **wordfreq** (Robyn Speer et al.), CC BY-SA 4.0 — word frequencies for the everyday list.
 * Tokenization at build time (legacy content build): fugashi + unidic-lite (BSD/MIT; UniDic BSD).
-* Grammar list and explanations, distractor rules and code: written for this project.
+* Grammar list and explanations, distractor rules and code: written for this project; the code is GPL-3.0-or-later (`LICENSE`).

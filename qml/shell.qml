@@ -1,5 +1,5 @@
-// JP Quiz — endless adaptive Japanese quiz (quickshell window + Rust engine).
-// Run: quickshell -p <this dir>   (the jp-quiz launcher does this)
+// Kirara 雲母 — endless adaptive Japanese quiz (quickshell window + Rust engine). Formerly JP Quiz.
+// Run: quickshell -p <this dir>   (the kirara launcher does this)
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -56,12 +56,12 @@ ShellRoot {
     }
 
     // ------------------------------------------------------------------ backend
-    property string appDir: Quickshell.env("JPQUIZ_APP") || (Quickshell.shellDir + "/..")
+    property string appDir: Quickshell.env("KIRARA_APP") || Quickshell.env("JPQUIZ_APP") || (Quickshell.shellDir + "/..")
 
     Process {
         id: engine
-        // the Rust engine (bin/jp-quiz-engine, built by install.sh), JSON lines over stdin/stdout
-        command: [shell.appDir + "/bin/jp-quiz-engine"]
+        // the Rust engine (bin/kirara-engine, built by install.sh), JSON lines over stdin/stdout
+        command: [shell.appDir + "/bin/kirara-engine"]
         workingDirectory: shell.appDir
         stdinEnabled: true
         running: true
@@ -359,7 +359,7 @@ ShellRoot {
     // ------------------------------------------------------------------ window
     FloatingWindow {
         id: win
-        title: Quickshell.env("JPQUIZ_TITLE") || "JP Quiz"
+        title: Quickshell.env("KIRARA_TITLE") || Quickshell.env("JPQUIZ_TITLE") || "Kirara"
         implicitWidth: 1060
         implicitHeight: 740
         minimumSize: Qt.size(560, 480)
@@ -634,7 +634,7 @@ ShellRoot {
 
     // test hook: drive the window without keyboard focus (used for screenshots)
     IpcHandler {
-        target: "jpquiz"
+        target: "kirara"
         function key(name: string): void {
             if (name === "stats") app.openView("stats");
             else if (name === "next") app.next();

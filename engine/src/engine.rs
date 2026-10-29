@@ -530,7 +530,7 @@ impl Engine {
     }
 
     /// Maintenance: answer one given item as if it had been asked (used to rebuild progress after
-    /// accidental input). With JPQUIZ_TEST_CLOCK=1 the request's "_now" puts it at its original time.
+    /// accidental input). With KIRARA_TEST_CLOCK=1 the request's "_now" puts it at its original time.
     pub fn replay(&mut self, key: &str, correct: bool, ms: i64) -> R<Value> {
         let i = *self.by_key.get(key).ok_or_else(|| format!("unknown item {key}"))?;
         let now = (self.now)();

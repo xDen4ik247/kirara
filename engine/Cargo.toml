@@ -1,8 +1,9 @@
 [package]
-name = "jp-quiz-engine"
+name = "kirara-engine"
 version = "0.1.0"
 edition = "2021"
-description = "JP Quiz engine (Rust port of jpquiz/): matchmaking, spaced repetition, game layer, JSON-lines bridge"
+license = "GPL-3.0-or-later"
+description = "Kirara engine (Rust port of jpquiz/): matchmaking, spaced repetition, game layer, JSON-lines bridge"
 publish = false
 
 [dependencies]

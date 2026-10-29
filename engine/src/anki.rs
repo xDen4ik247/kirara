@@ -3,7 +3,7 @@
 //!   <data>/anki-queue.jsonl until it is there.
 //! * Reading: AnkiConnect on 127.0.0.1:8770 (only READ_ACTIONS are sent for that).
 //! * Reviewing (opt-in setting `anki_reviews`): due cards become quiz questions and the answer goes back
-//!   as a real Anki review. `answerCards` (REVIEW_ACTIONS) is the only write jp-quiz ever sends, and only
+//!   as a real Anki review. `answerCards` (REVIEW_ACTIONS) is the only write Kirara ever sends, and only
 //!   through `answer_cards()`.
 use crate::pyjson::dumps;
 use regex::Regex;
@@ -19,11 +19,11 @@ const REVIEW_ACTIONS: [&str; 1] = ["answerCards"];
 const WORD_FIELDS: [&str; 11] = ["word", "expression", "vocab", "vocabulary", "kanji", "term", "japanese", "単語", "語彙", "front", "key"];
 
 pub fn deck() -> String {
-    std::env::var("JPQUIZ_ANKI_DECK").unwrap_or_else(|_| "Japanese::Quiz".into())
+    crate::env::var("ANKI_DECK").unwrap_or_else(|_| "Japanese::Quiz".into())
 }
 
 fn anki_url() -> String {
-    std::env::var("JPQUIZ_ANKI_URL").unwrap_or_else(|_| "http://127.0.0.1:8770".into())
+    crate::env::var("ANKI_URL").unwrap_or_else(|_| "http://127.0.0.1:8770".into())
 }
 
 pub struct Unavailable(#[allow(dead_code)] pub String);
@@ -71,7 +71,7 @@ fn http_post(url: &str, body: &str, timeout: Duration) -> Result<String, String>
 }
 
 pub fn invoke(action: &str, params: Value, timeout: f64) -> Result<Value, Unavailable> {
-    assert!(READ_ACTIONS.contains(&action), "jp-quiz never sends the write action {action:?} to AnkiConnect");
+    assert!(READ_ACTIONS.contains(&action), "Kirara never sends the write action {action:?} to AnkiConnect");
     send(action, params, timeout)
 }
 
@@ -333,7 +333,7 @@ pub fn are_due(ids: &[i64]) -> Result<Vec<bool>, Unavailable> {
 }
 
 /// Writes reviews to Anki: (card id, ease) with ease 1 = Again/Fail, 3 = Good/Pass. The only write
-/// action jp-quiz sends. Returns, per card, whether Anki took it.
+/// action Kirara sends. Returns, per card, whether Anki took it.
 pub fn answer_cards(answers: &[(i64, i64)]) -> Result<Vec<bool>, Unavailable> {
     let action = "answerCards";
     assert!(REVIEW_ACTIONS.contains(&action));
@@ -354,7 +354,7 @@ pub fn classify(c: &CardInfo) -> &'static str {
 }
 
 fn helper_path() -> PathBuf {
-    match std::env::var_os("JPQUIZ_ANKI_ADD") {
+    match crate::env::var_os("ANKI_ADD") {
         Some(p) => PathBuf::from(p),
         None => PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/bin/anki-add"),
     }

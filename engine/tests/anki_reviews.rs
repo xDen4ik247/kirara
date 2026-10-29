@@ -1,5 +1,5 @@
 //! Anki reviews end to end: the real engine binary against a fake AnkiConnect on a local port.
-//! Needs the built content (apps/jp-quiz/data/content.db, or JPQUIZ_CONTENT); skipped without it.
+//! Needs the built content (data/content.db, or KIRARA_CONTENT); skipped without it.
 use serde_json::{json, Value};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
@@ -86,7 +86,7 @@ fn serve(fake: Arc<Mutex<Fake>>) -> u16 {
 }
 
 fn content() -> Option<PathBuf> {
-    let p = std::env::var_os("JPQUIZ_CONTENT")
+    let p = std::env::var_os("KIRARA_CONTENT")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../data/content.db"));
     p.exists().then_some(p)
@@ -109,19 +109,19 @@ impl Drop for TempDir {
 
 impl Eng {
     fn start(content: &PathBuf, anki_url: &str, tag: &str) -> Eng {
-        let dir = std::env::temp_dir().join(format!("jpquiz-anki-test-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("kirara-anki-test-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        if let Some(p) = std::env::var_os("JPQUIZ_LIVE_PROGRESS").filter(|_| tag == "live") {
+        if let Some(p) = std::env::var_os("KIRARA_LIVE_PROGRESS").filter(|_| tag == "live") {
             std::fs::copy(p, dir.join("progress.db")).unwrap();
         }
-        let mut child = Command::new(env!("CARGO_BIN_EXE_jp-quiz-engine"))
-            .env("JPQUIZ_DATA", &dir)
-            .env("JPQUIZ_CONTENT", content)
-            .env("JPQUIZ_ANKI_URL", anki_url)
-            .env("JPQUIZ_ANKI_ADD", dir.join("no-helper"))
-            .env("JPQUIZ_SEED", "42")
-            .env("JPQUIZ_TEST_CLOCK", "1")
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kirara-engine"))
+            .env("KIRARA_DATA", &dir)
+            .env("KIRARA_CONTENT", content)
+            .env("KIRARA_ANKI_URL", anki_url)
+            .env("KIRARA_ANKI_ADD", dir.join("no-helper"))
+            .env("KIRARA_SEED", "42")
+            .env("KIRARA_TEST_CLOCK", "1")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
@@ -331,14 +331,14 @@ fn anki_not_running_at_all() {
 }
 
 /// By hand, against the real Anki (open, AnkiConnect on 8770), on a copy of your progress:
-///   JPQUIZ_LIVE_PROGRESS=~/.local/share/jp-quiz/progress.db cargo test --release --test anki_reviews live -- --ignored --nocapture
+///   KIRARA_LIVE_PROGRESS=~/.local/share/kirara/progress.db cargo test --release --test anki_reviews live -- --ignored --nocapture
 /// Prints the Anki questions it would ask and skips them (nothing is written to Anki).
-/// JPQUIZ_LIVE_ANSWER=<n> answers the first n of them for real (right answer → Pass).
+/// KIRARA_LIVE_ANSWER=<n> answers the first n of them for real (right answer → Pass).
 #[test]
 #[ignore]
 fn live() {
     let Some(content) = content() else { return eprintln!("no content.db, skipped") };
-    let answer_n: usize = std::env::var("JPQUIZ_LIVE_ANSWER").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
+    let answer_n: usize = std::env::var("KIRARA_LIVE_ANSWER").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
     let mut e = Eng::start(&content, "http://127.0.0.1:8770", "live");
     e.now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64();
     if e.call(json!({"cmd": "hello"}))["placement"] == json!(true) {
